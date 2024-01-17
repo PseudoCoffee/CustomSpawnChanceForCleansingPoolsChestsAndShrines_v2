@@ -4,6 +4,9 @@ using R2API;
 using System.Collections.Generic;
 using UnityEngine;
 
+// how to fix other mods
+// https://risk-of-thunder.github.io/R2Wiki/Mod-Creation/C%23-Programming/Assembly-References/
+
 namespace CustomSpawnChanceForCleansingPoolsChestsAndShrines_v2
 {
     // This is an example plugin that can be put in
