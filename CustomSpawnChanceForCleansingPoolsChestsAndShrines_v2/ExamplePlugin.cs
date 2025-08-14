@@ -1,6 +1,5 @@
 using BepInEx;
 using BepInEx.Configuration;
-using R2API;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -13,16 +12,6 @@ namespace CustomSpawnChanceForCleansingPoolsChestsAndShrines_v2
     // BepInEx/plugins/ExamplePlugin/ExamplePlugin.dll to test out.
     // It's a small plugin that adds a relatively simple item to the game,
     // and gives you that item whenever you press F2.
-
-    // This attribute specifies that we have a dependency on a given BepInEx Plugin,
-    // We need the R2API ItemAPI dependency because we are using for adding our item to the game.
-    // You don't need this if you're not using R2API in your plugin,
-    // it's just to tell BepInEx to initialize R2API before this plugin so it's safe to use R2API.
-    [BepInDependency(ItemAPI.PluginGUID)]
-
-    // This one is because we use a .language file for language tokens
-    // More info in https://risk-of-thunder.github.io/R2Wiki/Mod-Creation/Assets/Localization/
-    [BepInDependency(LanguageAPI.PluginGUID)]
 
     // This attribute is required, and lists metadata for your plugin.
     [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
