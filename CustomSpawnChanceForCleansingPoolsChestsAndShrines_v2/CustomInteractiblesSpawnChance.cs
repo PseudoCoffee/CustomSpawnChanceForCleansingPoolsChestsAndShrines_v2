@@ -1,5 +1,8 @@
 using BepInEx;
 using BepInEx.Configuration;
+using RiskOfOptions;
+using RiskOfOptions.OptionConfigs;
+using RiskOfOptions.Options;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,19 +11,11 @@ using UnityEngine;
 
 namespace CustomSpawnChanceForCleansingPoolsChestsAndShrines_v2
 {
-    // This is an example plugin that can be put in
-    // BepInEx/plugins/ExamplePlugin/ExamplePlugin.dll to test out.
-    // It's a small plugin that adds a relatively simple item to the game,
-    // and gives you that item whenever you press F2.
 
-    // This attribute is required, and lists metadata for your plugin.
-    [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
+	[BepInDependency("com.rune580.riskofoptions")]
 
-    // This is the main declaration of our plugin class.
-    // BepInEx searches for all classes inheriting from BaseUnityPlugin to initialize on startup.
-    // BaseUnityPlugin itself inherits from MonoBehaviour,
-    // so you can use this as a reference for what you can declare and use in your plugin class
-    // More information in the Unity Docs: https://docs.unity3d.com/ScriptReference/MonoBehaviour.html
+	// This attribute is required, and lists metadata for your plugin.
+	[BepInPlugin(PluginGUID, PluginName, PluginVersion)]
 	public class CustomSpawnChanceForCleansingPoolsChestsAndShrines_v2 : BaseUnityPlugin
 	{
 		//define mod ID: uses the format of "com.USERNAME.MODNAME"
@@ -30,10 +25,11 @@ namespace CustomSpawnChanceForCleansingPoolsChestsAndShrines_v2
 		public const string PluginName = "Custom spawn shrine";
 
 		//define mod version inside quotes. Follows format of "MAJORVERSION.MINORPATCH.BUGFIX". Ex: 1.2.3 is Major Release 1, Patch 2, Bug Fix 3.
-		public const string PluginVersion = "1.0.3";
+		public const string PluginVersion = "1.1.0";
 
 
 		public static ConfigEntry<float> InteractibleCountMultiplier { get; set; }
+		public static ConfigEntry<bool> ResetConfig { get; set; }
 
 		public static ConfigEntry<float> IscChest1 { get; set; }
 		public static ConfigEntry<float> IscChest2 { get; set; }
@@ -136,8 +132,8 @@ namespace CustomSpawnChanceForCleansingPoolsChestsAndShrines_v2
 
 			"iscVoidCamp",
 			"iscVoidChest",
-            //"iscVoidTriple",
-            "iscVoidCoinBarrel"
+			//"iscVoidTriple",
+			"iscVoidCoinBarrel"
 		};
 
 		private static readonly Dictionary<string, string> InteractibleToLocalized = new Dictionary<string, string>
@@ -311,10 +307,29 @@ namespace CustomSpawnChanceForCleansingPoolsChestsAndShrines_v2
 
 		private void ConfigSetup()
 		{
-			InteractibleCountMultiplier = Config.Bind(section: "!General", key: "Count multiplier", defaultValue: 1.0f, configDescription: new ConfigDescription("Multiply the TOTAL number of spawnable interactibles. (Capped at 100)."));
+			SliderConfig globalSliderConfig = new() { min = 10, max = 10000 };
+			SliderConfig sliderConfig = new() { min = 0, max = 10000 };
+
+			InteractibleCountMultiplier = Config.Bind(section: "!General", key: "Count multiplier", defaultValue: 1.0f, configDescription: new ConfigDescription("Multiply the TOTAL number of spawnable interactibles. (Capped at 10000% or 100x)."));
+			ModSettingsManager.AddOption(new SliderOption(InteractibleCountMultiplier, globalSliderConfig));
+
+			ResetConfig = Config.Bind(section: "!General", key: "Reset config on next launch.", defaultValue: true, configDescription: new ConfigDescription("Config will change from using values from 0-100 to 0%-10000%. This will reset all values to 100% on next launch."));
+
+			if (ResetConfig.Value)
+				InteractibleCountMultiplier.Value = 100;
 
 			foreach (string interactible in Interactibles)
-				InteractibleToBind[interactible] = Config.Bind(section: InteractibleToGroup[interactible], key: InteractibleToLocalized[interactible], defaultValue: 1.0f, configDescription: new ConfigDescription($"Multiply the weighted chance to spawn a/an {InteractibleToLocalized[interactible]}."));
+			{
+				ConfigEntry<float> config = Config.Bind(section: InteractibleToGroup[interactible], key: InteractibleToLocalized[interactible], defaultValue: 1.0f, configDescription: new ConfigDescription($"Multiply the weighted chance to spawn a/an {InteractibleToLocalized[interactible]}. Where 100% is unchanged, 200% is 2x(twice) and 50% is 0.5x(half)."));
+
+				if (ResetConfig.Value)
+					config.Value = 100;
+
+				InteractibleToBind[interactible] = config;
+				ModSettingsManager.AddOption(new SliderOption(config, sliderConfig));
+			}
+
+			ResetConfig.Value = false;
 		}
 
 		private void Hooks()
@@ -324,12 +339,12 @@ namespace CustomSpawnChanceForCleansingPoolsChestsAndShrines_v2
 		}
 
 		private WeightedSelection<RoR2.DirectorCard> SceneDirector_GenerateInteractableCardSelection(
-			On.RoR2.SceneDirector.orig_GenerateInteractableCardSelection orig,
-			RoR2.SceneDirector self)
+			On.RoR2.SceneDirector.orig_GenerateInteractableCardSelection methodReference,
+			RoR2.SceneDirector thisReference)
 		{
-			self.interactableCredit = (int)(self.interactableCredit * Mathf.Clamp(InteractibleCountMultiplier.Value, 0, 100));
+			thisReference.interactableCredit = (int)(thisReference.interactableCredit * Mathf.Clamp(InteractibleCountMultiplier.Value / 100, 0.1f, 100));
 
-			var list = orig(self);
+			var list = methodReference(thisReference);
 			for (int i = 0; i < list.Count; i++)
 			{
 				if (list?.choices[i] != null)
@@ -340,7 +355,8 @@ namespace CustomSpawnChanceForCleansingPoolsChestsAndShrines_v2
 					{
 						if (config.Value < 0)
 							config.Value = 0;
-						list.choices[i].weight *= config.Value;
+
+						list.choices[i].weight *= config.Value / 100;
 					}
 				}
 			}
