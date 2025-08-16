@@ -25,7 +25,7 @@ namespace CustomSpawnChanceForCleansingPoolsChestsAndShrines_v2
 		public const string PluginName = "Custom spawn shrine";
 
 		//define mod version inside quotes. Follows format of "MAJORVERSION.MINORPATCH.BUGFIX". Ex: 1.2.3 is Major Release 1, Patch 2, Bug Fix 3.
-		public const string PluginVersion = "1.1.0";
+		public const string PluginVersion = "1.1.1";
 
 
 		public static ConfigEntry<float> InteractibleCountMultiplier { get; set; }
@@ -310,7 +310,7 @@ namespace CustomSpawnChanceForCleansingPoolsChestsAndShrines_v2
 			SliderConfig globalSliderConfig = new() { min = 10, max = 10000 };
 			SliderConfig sliderConfig = new() { min = 0, max = 10000 };
 
-			InteractibleCountMultiplier = Config.Bind(section: "!General", key: "Count multiplier", defaultValue: 1.0f, configDescription: new ConfigDescription("Multiply the TOTAL number of spawnable interactibles. (Capped at 10000% or 100x)."));
+			InteractibleCountMultiplier = Config.Bind(section: "!General", key: "Count multiplier", defaultValue: 100.0f, configDescription: new ConfigDescription("Multiply the TOTAL number of spawnable interactibles. (Capped at 10000% or 100x)."));
 			ModSettingsManager.AddOption(new SliderOption(InteractibleCountMultiplier, globalSliderConfig));
 
 			ResetConfig = Config.Bind(section: "!General", key: "Reset config on next launch.", defaultValue: true, configDescription: new ConfigDescription("Config will change from using values from 0-100 to 0%-10000%. This will reset all values to 100% on next launch."));
@@ -320,7 +320,7 @@ namespace CustomSpawnChanceForCleansingPoolsChestsAndShrines_v2
 
 			foreach (string interactible in Interactibles)
 			{
-				ConfigEntry<float> config = Config.Bind(section: InteractibleToGroup[interactible], key: InteractibleToLocalized[interactible], defaultValue: 1.0f, configDescription: new ConfigDescription($"Multiply the weighted chance to spawn a/an {InteractibleToLocalized[interactible]}. Where 100% is unchanged, 200% is 2x(twice) and 50% is 0.5x(half)."));
+				ConfigEntry<float> config = Config.Bind(section: InteractibleToGroup[interactible], key: InteractibleToLocalized[interactible], defaultValue: 100.0f, configDescription: new ConfigDescription($"Multiply the weighted chance to spawn a/an {InteractibleToLocalized[interactible]}. Where 100% is unchanged, 200% is 2x(twice) and 50% is 0.5x(half)."));
 
 				if (ResetConfig.Value)
 					config.Value = 100;
